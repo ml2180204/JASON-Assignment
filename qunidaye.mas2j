@@ -1,0 +1,16 @@
+// Implementation of the example described in chapter 2
+// of the Jason's manual
+
+MAS qunidaye {
+
+    infrastructure: Centralised
+
+    environment: RREnv
+    
+    // To run different versions of robot 1, edit the name of the
+    // first agent to be that of the corresponding file.
+    agents:
+		doctor;
+		
+    aslSourcePath: "src/asl";
+}
