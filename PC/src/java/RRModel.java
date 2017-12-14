@@ -103,28 +103,20 @@ public class RRModel extends GridWorldModel{
 		}
 		
 		//initialize the obstacles on the map
-		add(RREnv.GARB, 1,0);
-		add(RREnv.GARB, 2,3);
-		add(RREnv.GARB, 0,0);
-		add(RREnv.POSSIBLE_VIC, 4,3);
-		add(RREnv.POSSIBLE_VIC, 4,0);
-		add(RREnv.POSSIBLE_VIC, 0,4);
-		add(RREnv.POSSIBLE_VIC, 2,0);
-		add(RREnv.POSSIBLE_VIC, 4,4);
-		
-		grid[1][0].setOccupied(true);
-		grid[2][3].setOccupied(true);
-		grid[0][0].setOccupied(true);
-		ps_victim.add(grid[4][3]);
-		ps_victim.add(grid[4][0]);
-		ps_victim.add(grid[0][4]);
-		
-		ps_victim.add(grid[2][0]);
-		ps_victim.add(grid[4][4]);
+
 		//update
 		updateAdjacencyList();
 	}
 
+	void initObs(int x,int y) {
+		add(RREnv.GARB, x, y);
+		grid[x][y].setOccupied(true);
+	}
+	
+	void initVictim(int x, int y) {
+		add(RREnv.POSSIBLE_VIC, x, y);
+		ps_victim.add(grid[x][y]);
+	}
 	// the N,S,W,E direction of one grid contains obstacles
 	boolean NorthObs(int x, int y) {
 		if(y!=0 && grid[x][y].getAdjacencyList().contains(grid[x][y-1])) {
@@ -431,9 +423,6 @@ public class RRModel extends GridWorldModel{
             ++scout.x;
         	if(scoutHead%4==0) {
         		scoutHead++;
-        	} else if(scoutHead%4==1||scoutHead%4==-3) {
-        	} else if(scoutHead%4==-1||scoutHead%4==3) {
-        		scoutHead+=2;
         	} else if(scoutHead%4==2 ||scoutHead%4==-2) {
         		scoutHead--;
         	}
@@ -442,40 +431,31 @@ public class RRModel extends GridWorldModel{
             --scout.x;
         	if(scoutHead%4==0) {
         		scoutHead--;
-        	} else if(scoutHead%4==1||scoutHead%4==-3) {
-        		scoutHead+=2;
-        	} else if(scoutHead%4==-1||scoutHead%4==3) {
         	} else if(scoutHead%4==2 ||scoutHead%4==-2) {
         		scoutHead++;
         	}
         }
         if (scout.y < y) {
             ++scout.y;
-        	if(scoutHead%4==0) {
-        		scoutHead+=2;
-        	} else if(scoutHead%4==1||scoutHead%4==-3) {
+        	if(scoutHead%4==1||scoutHead%4==-3) {
         		scoutHead++;
         	} else if(scoutHead%4==-1||scoutHead%4==3) {
         		scoutHead--;
-        	} else if(scoutHead%4==2 ||scoutHead%4==-2) {
         	}
         }
         if (scout.y > y) {
             --scout.y;
-        	if(scoutHead%4==0) {
-        	} else if(scoutHead%4==1||scoutHead%4==-3) {
+        	if(scoutHead%4==1||scoutHead%4==-3) {
         		scoutHead--;
         	} else if(scoutHead%4==-1||scoutHead%4==3) {
         		scoutHead++;
-        	} else if(scoutHead%4==2 ||scoutHead%4==-2) {
-        		scoutHead+=2;
         	}
         }
         setAgPos(0, scout);
         ps_square.get(0).getHeadList().clear();
         ps_square.set(0, grid[scout.x][scout.y]);
         ps_square.get(0).getHeadList().add(scoutHead);
-       
+        setAgPos(0, scout);
    }
     
     GridSquare getNextSquare() {

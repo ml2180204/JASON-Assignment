@@ -5,12 +5,7 @@ import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class RobotServer extends ServerSocket{
-	
-	private final static int ARENA_LENGTH = 195;
-	private final static int ARENA_WIDTH = 150;
-	private final static int GRID_LENGTH = 32; // Value taken from assignment webpage
-	private final static int GRID_WIDTH = 30; // Value taken from assignment webpage
+public class RobotService extends ServerSocket{
 	
     private static final int port = 8888;
     private boolean serverClosed = false;
@@ -20,19 +15,17 @@ public class RobotServer extends ServerSocket{
     
     private Robot robot;
     
-	public RobotServer(Robot robot) throws Exception {  
+	public RobotService(Robot robot) throws Exception {  
         super(port);  
         this.robot = robot;
     }
 	
-	public void main(String[] args) {
-		Map map = new Map(ARENA_LENGTH, ARENA_WIDTH, GRID_LENGTH, GRID_WIDTH);
-		Robot robot = new Robot(map);
-		RobotMonitor myMonitor = new RobotMonitor(robot, 400);
-		myMonitor.start();
+	public static void main(String[] args) {
+
+		Robot robot = new Robot();
 		
 		try {
-			RobotServer rs = new RobotServer(robot);
+			RobotService rs = new RobotService(robot);
 			rs.load();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -50,22 +43,28 @@ public class RobotServer extends ServerSocket{
 				String msg = in.readLine();
 				if(msg.startsWith("MOVE")) {
 					String[] pos = msg.substring(5).split(",");
+					System.out.println("MOVE_TO("+pos[0]+","+pos[1]+")");
 					int x = Integer.parseInt(pos[0]);
 					int y = Integer.parseInt(pos[1]);
-					robot.Move(robot.getMap().getRobotSquare(), robot.getMap().getGridSquare(x, y));
-					out.println("UPDATE_MOVE"+pos[0]+","+pos[1]);
+					robot.Move(robot.robot_x,robot.robot_y,x,y);
+					out.println("UPDATE_MOVE");
 					out.flush();
 				}
 				if(msg.startsWith("UPDATE_ROBOT")) {
 					String[] info = msg.substring(13).split(",");
+					System.out.println("UPDATE_LOCATION_INFO");
 					int x = Integer.parseInt(info[0]);
 					int y = Integer.parseInt(info[1]);
 					int head = Integer.parseInt(info[2]);
 					robot.direction_flag = head;
-					robot.getMap().setRobotSquare(robot.getMap().getGridSquare(x, y));
+					robot.robot_x = x;
+					robot.robot_y = y;
+					out.println("DONE");
+					out.flush();
 				}
 				switch(msg) {
 				case "DETECT_OBSTACLES":
+					System.out.println("START_DETECT_OBSTACLES");
 					String front ="F", left="F", right="F", back = "F";
 					if(robot.detectObstacles(first)[0] ==true) {
 						front ="T";
@@ -85,31 +84,36 @@ public class RobotServer extends ServerSocket{
 					out.println("DETECTED_OBSTACLES"+"+"+front+"+"+left+"+"+right+"+"+back);
 					out.flush();
 				case "GO_AHEAD":
+					System.out.println(msg);
 					robot.goAhead();
 					out.println("UPDATE_POSSIBLE_LOCATION");
 					out.flush();
 				case "GO_LEFT":
+					System.out.println(msg);
 					robot.goLeft();
 					out.println("UPDATE_POSSIBLE_LOCATION");
 					out.flush();
 				case "GO_RIGHT":
+					System.out.println(msg);
 					robot.goRight();
 					out.println("UPDATE_POSSIBLE_LOCATION");
 					out.flush();
 				case "GO_BACK":
+					System.out.println(msg);
 					robot.goBack();
 					out.println("UPDATE_POSSIBLE_LOCATION");
 					out.flush();
 				case "CHECK_VICTIM":
 					String color = "empty";
-					if(robot.getColour()[0]==2.0f) {
+					if(robot.getColour()[0]>0.15f) {
 						color = "red";
-					} else if (robot.getColour()[0] == 3.0f) {
+					} else if (robot.getColour()[0] > 0.2f) {
 						color = "blue";
-					} else if (robot.getColour()[0] == 4.0f) {
+					} else if (robot.getColour()[0] < 0.1f) {
 						color = "green";
 					}
-					out.println("DETECTED_COLOR"+"+"+"green");
+					System.out.println("DETECTED_COLOR: "+color);
+					out.println("DETECTED_COLOR"+"+"+color);
 					out.flush();			
 				}
 			} catch (IOException e) {

@@ -14,10 +14,8 @@ public class RREnv extends Environment {
 	private final static int ARENA_LENGTH = 195;
 	private final static int ARENA_WIDTH = 150;
 	private final static int GRID_LENGTH = 32; // Value taken from assignment webpage
-	private final static int GRID_WIDTH = 30; // Value taken from assignment webpage
+	private final static int GRID_WIDTH = 25; // Value taken from assignment webpage
 	
-    public static final int row = 7; // grid size
-    public static final int column = 6; // grid size
     public static final int GARB  = 16; // garbage code in grid model
     public static final int POSSIBLE_LOCATION = 32;
     public static final int POSSIBLE_HEAD = 64;
@@ -34,11 +32,8 @@ public class RREnv extends Environment {
     public static final Term    ur = Literal.parseLiteral("update(robot)");
     public static final Term    cs = Literal.parseLiteral("check(slot)");
     public static final Term    rp = Literal.parseLiteral("remove(ps_victim)");
-    public static final Term    dg = Literal.parseLiteral("drop(garb)");
-    public static final Term    bg = Literal.parseLiteral("burn(garb)");
-    
-    public static final Literal g1 = Literal.parseLiteral("garbage(r1)");
-    public static final Literal g2 = Literal.parseLiteral("garbage(r2)");
+
+
 
     static Logger logger = Logger.getLogger(RREnv.class.getName());
 
@@ -51,28 +46,53 @@ public class RREnv extends Environment {
        // model = new MarsModel();
         view  = new RRView(model);
         model.setView(view);
-//        try {
-//			comm = new RRComm(model,this);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-        updatePercepts();	
+        try {
+			comm = new RRComm(model,this);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     }
     
     @Override
     public boolean executeAction(String ag, Structure action) {
         logger.info(ag+" doing: "+ action);
         try {
-            if (action.equals(ns)) {
+        	if (action.getFunctor().equals("initObs")) {
+        		int x = (int)((NumberTerm)action.getTerm(0)).solve();
+                int y = (int)((NumberTerm)action.getTerm(1)).solve();
+                model.initObs(x, y);
+        	} else if (action.getFunctor().equals("initVictim")) {
+        		int x = (int)((NumberTerm)action.getTerm(0)).solve();
+                int y = (int)((NumberTerm)action.getTerm(1)).solve();
+                model.initVictim(x, y);
+        	} else if (action.equals(ns)) {
+            	model.nextSlot();
 //              model.nextSlot();
             	model.sendRobotBehavior();
+            	String ret = comm.readFromRobot();
+            	if(ret.equals("UPDATE_POSSIBLE_LOCATION")) {
+            		model.detected_obstacles = false;
+            	}
             } else if (action.equals(dto)){
             	comm.sendToRobot("DETECT_OBSTACLES");
+            	String ret = comm.readFromRobot();
+            	if(ret.startsWith("DETECTED_OBSTACLES")) {
+            		String[] s = ret.substring(19).split("+");
+            		for(int i=0; i<s.length; i++) {
+            			if(s[i].equals("T")) {
+            				model.obstacles[i] = true;
+            			} else {
+            				model.obstacles[i] = false;
+            			}
+            		}
+            		model.detected_obstacles = true;
+            	}
             } else if (action.equals(ur)){
             	String dx = String.valueOf(model.getAgPos(0).x);
             	String dy = String.valueOf(model.getAgPos(0).y);
             	String dh = String.valueOf(model.scoutHead);
                 comm.sendToRobot("UPDATE_ROBOT"+dx+","+dy+","+dh);
+                String ret = comm.readFromRobot();
             } else if (action.getFunctor().equals("goto")) {
             	int x = (int)((NumberTerm)action.getTerm(0)).solve();
                 int y = (int)((NumberTerm)action.getTerm(1)).solve();
@@ -80,9 +100,20 @@ public class RREnv extends Environment {
                 String dy = String.valueOf(y);
 //              model.moveTo(x, y);
                 comm.sendToRobot("MOVE"+dx+","+dy);
+                String ret = comm.readFromRobot();
+                if(ret.startsWith("UPDATE_MOVE")) {
+            		model.moveTo(x, y);
+            	}
             } else if (action.equals(cs)) {
 //            	model.checkVictim();
             	comm.sendToRobot("CHECK_VICTIM");
+            	String ret = comm.readFromRobot();
+            	if(ret.startsWith("DETECTED_COLOR")) {
+            		String[] s = ret.split("+");
+            		String color = s[1];
+            		model.victimColor = color;
+            		model.checkVictim();
+            	}
             } else if (action.equals(rp)) {
             	model.ps_victim.clear();
             }
@@ -103,7 +134,7 @@ public class RREnv extends Environment {
             e.printStackTrace();
         }
         
-//        updatePercepts();
+        updatePercepts();
 
         try {
             Thread.sleep(200);
@@ -130,6 +161,23 @@ public class RREnv extends Environment {
 //        	Literal p = Literal.parseLiteral("detected_color");
 //         	addPercept(p);
 //        }
+        
+        if(model.obstacles[0]) {
+        	Literal p = Literal.parseLiteral("obs(up)");
+         	addPercept(p);
+        }
+        if(model.obstacles[1]) {
+        	Literal p = Literal.parseLiteral("obs(left)");
+         	addPercept(p);
+        }
+        if(model.obstacles[2]) {
+        	Literal p = Literal.parseLiteral("obs(right)");
+         	addPercept(p);
+        }
+        if(model.obstacles[3]) {
+        	Literal p = Literal.parseLiteral("obs(down)");
+         	addPercept(p);
+        }
         
         if (foundLocation) {
         	addPercept(fl);

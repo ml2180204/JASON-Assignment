@@ -485,6 +485,7 @@ public class RRModel extends GridWorldModel{
         ps_square.get(0).getHeadList().clear();
         ps_square.set(0, grid[scout.x][scout.y]);
         ps_square.get(0).getHeadList().add(scoutHead);
+        setAgPos(0, scout);
        
    }
     
