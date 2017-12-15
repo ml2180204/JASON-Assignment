@@ -5,20 +5,21 @@ import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class RobotService {
+public class SimuServer {
 	
     private static final int port = 8888;
     private boolean serverClosed = false;
     private BufferedReader in;
     private PrintStream out;
     private boolean first = true;
+    private int round = 1;
+    private int step=1	;
+    private int color_step = 1;
     
-    private Robot robot;
     private Socket socket;
     private ServerSocket serverSocket;
     
-	public RobotService(Robot robot) throws Exception {  
-		this.robot = robot;
+	public SimuServer() throws Exception {  
         serverSocket = new ServerSocket(port);
         System.out.println("Server running..");
         socket = serverSocket.accept();
@@ -27,11 +28,8 @@ public class RobotService {
     }
 	
 	public static void main(String[] args) {
-
-		Robot robot = new Robot();
-		
 		try {
-			RobotService rs = new RobotService(robot);
+			SimuServer rs = new SimuServer();
 			rs.load();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -47,7 +45,6 @@ public class RobotService {
 					System.out.println("MOVE_TO("+pos[0]+","+pos[1]+")");
 					int x = Integer.parseInt(pos[0]);
 					int y = Integer.parseInt(pos[1]);
-					robot.Move(robot.robot_x,robot.robot_y,x,y);
 					out.println("UPDATE_MOVE");
 					out.flush();
 				} else if(msg.startsWith("UPDATE_ROBOT")) {
@@ -56,9 +53,6 @@ public class RobotService {
 					int x = Integer.parseInt(info[0]);
 					int y = Integer.parseInt(info[1]);
 					int head = Integer.parseInt(info[2]);
-					robot.direction_flag = head;
-					robot.robot_x = x;
-					robot.robot_y = y;
 					out.println("DONE");
 					out.flush();
 				}
@@ -66,58 +60,61 @@ public class RobotService {
 				case "DETECT_OBSTACLES":
 					System.out.println("DETECT_OBSTACLES");
 					String front ="F", left="F", right="F", back = "F";
-					robot.detectObstacles(first);
-					if(robot.obstacles[0] ==true) {
-						front ="T";
+					if(step==1) {
+						front = "F"; left="F"; right="T"; back = "F";
 					}
-					if(robot.obstacles[1] ==true) {
-						left ="T";
+					if(step==2) {
+						front = "F"; left="F"; right="F"; back = "F";
 					}
-					if(robot.obstacles[2] ==true) {
-						right ="T";
+					if(step==3) {
+						front = "F"; left="F"; right="F"; back = "F";
 					}
-					if(first) {
-						if(robot.obstacles[3] ==true) {
-							back ="T";
-						}
+					if(step==4) {
+						front = "F"; left="T"; right="T"; back = "F";
 					}
 					first = false;
+					step++;
 					out.println("DETECTED_OBSTACLES"+","+front+","+left+","+right+","+back);
 					out.flush();
 					break;
 				case "GO_AHEAD":
-					System.out.println("msg");
-					robot.goAhead();
+					System.out.println("GO_AHEAD");
 					out.println("DONE");
 					out.flush();
 					break;
 				case "GO_LEFT":
 					System.out.println(msg);
-					robot.goLeft();
 					out.println("DONE");
 					out.flush();
 					break;
 				case "GO_RIGHT":
 					System.out.println(msg);
-					robot.goRight();
 					out.println("DONE");
 					out.flush();
 					break;
 				case "GO_BACK":
 					System.out.println(msg);
-					robot.goBack();
 					out.println("DONE");
 					out.flush();
 					break;
 				case "CHECK_VICTIM":
 					String color = "empty";
-					if(robot.getColour()[0]>0.17f) {
+					if(color_step==1) {
 						color = "red";
-					} else if (robot.getColour()[2] < 0.13f) {
-						color = "blue";
-					} else if (robot.getColour()[1] > 0.15f) {
+					}
+					if(color_step==2) {
+						color = "empty";
+					}
+					if(color_step==3) {
 						color = "green";
 					}
+					if(color_step==4) {
+						color = "empty";
+					}
+					if(color_step==5) {
+						color = "blue";
+					}
+					color_step++;
 					System.out.println("DETECTED_COLOR: "+color);
 					out.println("DETECTED_COLOR"+","+color);
 					out.flush();	

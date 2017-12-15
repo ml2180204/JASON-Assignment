@@ -10,7 +10,6 @@ import jason.environment.grid.Location;
 //It is based on an occupancy grid
 public class RRModel extends GridWorldModel{
 	
-	private RRComm comm;
 	private final int LENGTH; // Arena length
 	private final int WIDTH; // Arena width
 	private final int GRID_LENGTH; // Length of one grid square
@@ -56,10 +55,9 @@ public class RRModel extends GridWorldModel{
     ArrayList<GridSquare> found_victim = new ArrayList<GridSquare>();
     
 	// Constructor method
-	public RRModel(int l, int w, int gl, int gw, RRComm comm) {
+	public RRModel(int l, int w, int gl, int gw) {
 		super(Math.round(w/gw),Math.round(l/gl),1);
 		
-		this.comm = comm;
 		// Set grid dimensiosn
 		LENGTH = l;
 		WIDTH = w;
@@ -103,14 +101,24 @@ public class RRModel extends GridWorldModel{
 		}
 		
 		//initialize the obstacles on the map
-
+//		grid[2][1].setOccupied(true);
+//		grid[4][1].setOccupied(true);
+//		grid[1][2].setOccupied(true);
+//		grid[0][5].setOccupied(true);
+//		grid[4][4].setOccupied(true);
+//		grid[5][4].setOccupied(true);
+//		ps_victim.add(grid[0][0]);
+//		ps_victim.add(grid[2][2]);
+//		ps_victim.add(grid[4][0]);
+//		ps_victim.add(grid[3][3]);
+//		ps_victim.add(grid[2][4]);
 		//update
-		updateAdjacencyList();
 	}
 
 	void initObs(int x,int y) {
 		add(RREnv.GARB, x, y);
 		grid[x][y].setOccupied(true);
+		updateAdjacencyList();
 	}
 	
 	void initVictim(int x, int y) {
@@ -211,18 +219,18 @@ public class RRModel extends GridWorldModel{
 		boolean flag1;
 		boolean flag2;
 		if(!next_ps_square.isEmpty()) {
-		for(int i=0; i<ps_square.size();i++) {
-			ps_square.get(i).getHeadList().clear();
-			remove(RREnv.POSSIBLE_LOCATION, ps_square.get(i).getXCoordinate(),ps_square.get(i).getYCoordinate());
-		}
-		ps_square.clear();
-		ps_square.addAll(next_ps_square);
-		
-		for(int i=0; i<ps_square.size();i++) {
-			ps_square.get(i).getHeadList().addAll(ps_square.get(i).getNextHeadList());
-			ps_square.get(i).getNextHeadList().clear();
-		}
-		next_ps_square.clear();
+			for(int i=0; i<ps_square.size();i++) {
+				ps_square.get(i).getHeadList().clear();
+				remove(RREnv.POSSIBLE_LOCATION, ps_square.get(i).getXCoordinate(),ps_square.get(i).getYCoordinate());
+			}
+			ps_square.clear();
+			ps_square.addAll(next_ps_square);
+			
+			for(int i=0; i<ps_square.size();i++) {
+				ps_square.get(i).getHeadList().addAll(ps_square.get(i).getNextHeadList());
+				ps_square.get(i).getNextHeadList().clear();
+			}
+			next_ps_square.clear();
 		}
 		if(ps_square.isEmpty()) {
 			for (int y = 0; y < ROWS; y++) {
@@ -270,28 +278,36 @@ public class RRModel extends GridWorldModel{
 					int x = ps_square.get(i).getXCoordinate();
 					int y = ps_square.get(i).getYCoordinate();
 					Integer ps_head = ps_square.get(i).getHeadList().get(j);
-					if(obstacles[0] && !upObs(x,y,ps_head)) {
+					if(obstacles[0]
+							&& !upObs(x,y,ps_head)) {
 						flag2=true;
 					}
-					if(!obstacles[0] && upObs(x,y,ps_head)) {
+					if(!obstacles[0]
+							&& upObs(x,y,ps_head)) {
 						flag2=true;
 					}
-					if(obstacles[3] && !downObs(x,y,ps_head)) {
+					if(obstacles[3]
+							&& !downObs(x,y,ps_head)) {
 						flag2=true;
 					}
-					if(!obstacles[3] && downObs(x,y,ps_head)) {
+					if(!obstacles[3]
+							&& downObs(x,y,ps_head)) {
 						flag2=true;
 					}
-					if(obstacles[1] && !leftObs(x,y,ps_head)) {
+					if(obstacles[1]
+							&& !leftObs(x,y,ps_head)) {
 						flag2=true;
 					}
-					if(!obstacles[1] && leftObs(x,y,ps_head)) {
+					if(!obstacles[1]
+							&& leftObs(x,y,ps_head)) {
 						flag2=true;
 					}
-					if(obstacles[2] && !rightObs(x,y,ps_head)) {
+					if(obstacles[2]
+							&& !rightObs(x,y,ps_head)) {
 						flag2=true;
 					}
-					if(!obstacles[2] && rightObs(x,y,ps_head)) {
+					if(!obstacles[2]
+							&& rightObs(x,y,ps_head)) {
 						flag2=true;
 					}
 					if(flag2) {
@@ -338,8 +354,14 @@ public class RRModel extends GridWorldModel{
 				}
 			}
 		}
+
 	}
 	void nextSlot() {
+		System.out.println(obstacles[0]);
+		System.out.println(obstacles[1]);
+		System.out.println(obstacles[2]);
+		System.out.println(obstacles[3]);
+		
 		updatePsLocation();
 		if(!(ps_square.size()==1 && ps_square.get(0).getHeadList().size()==1)) {
 		try {
@@ -355,6 +377,7 @@ public class RRModel extends GridWorldModel{
 		
 		if(!upObs(x,y,ps_head)) {
 		} else if(!leftObs(x,y,ps_head)) {
+
 			for(int i=0; i<ps_square.size();i++) {
 				for(int j=0; j<ps_square.get(i).getHeadList().size();j++) {
 					int h = ps_square.get(i).getHeadList().get(j);
@@ -362,6 +385,7 @@ public class RRModel extends GridWorldModel{
 				}
 			}
 		} else if(!rightObs(x,y,ps_head)) {
+
 			for(int i=0; i<ps_square.size();i++) {
 				for(int j=0; j<ps_square.get(i).getHeadList().size();j++) {
 					int h = ps_square.get(i).getHeadList().get(j);
@@ -369,6 +393,7 @@ public class RRModel extends GridWorldModel{
 				}
 			}
 		} else if(!downObs(x,y,ps_head)) {
+
 			for(int i=0; i<ps_square.size();i++) {
 				for(int j=0; j<ps_square.get(i).getHeadList().size();j++) {
 					int h = ps_square.get(i).getHeadList().get(j);
@@ -391,6 +416,7 @@ public class RRModel extends GridWorldModel{
 			setAgPos(0, ps_square.get(0).getXCoordinate(), ps_square.get(0).getYCoordinate() );
 			scoutHead = ps_square.get(0).getHeadList().get(0);
 		}
+		
 	}
 	
     void drawPsLocation() {
@@ -757,20 +783,6 @@ public class RRModel extends GridWorldModel{
 		return findPath(robotSquare, currentNode);
 	}
 
-	public void sendRobotBehavior() throws IOException {
-		int x = ps_square.get(0).getXCoordinate();
-		int y = ps_square.get(0).getYCoordinate();
-		int ps_head = ps_square.get(0).getHeadList().get(0);
-		if(!upObs(x,y,ps_head)) {
-			comm.sendToRobot("GO_AHEAD");
-		} else if(!leftObs(x,y,ps_head)) {
-			comm.sendToRobot("GO_LEFT");
-		} else if(!rightObs(x,y,ps_head)) {
-			comm.sendToRobot("GO_RIGHT");
-		} else if(!downObs(x,y,ps_head)) {
-			comm.sendToRobot("GO_BACK");
-		}
-	}
 }
 //class Simulation {
 //	private ArrayList<Boolean[]> sr = new ArrayList<Boolean[]>();

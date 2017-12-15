@@ -35,8 +35,9 @@ public class Robot {
 	public int direction_flag = 0;
 	public int robot_x = 0;
 	public int robot_y = 0;
-	private int travel_offset = 10;
-	private int obs_distance_offset = 25;
+	public boolean [] obstacles = new boolean[4];
+	private int travel_offset = 14;
+	private double obs_distance_offset = 0.22;
 	
 	public Robot() {
 		// Instantiate Brick
@@ -46,13 +47,13 @@ public class Robot {
 
 		// Instantiate Motors
 		leftMotor = new EV3LargeRegulatedMotor(myEV3.getPort("B"));
-		rightMotor = new EV3LargeRegulatedMotor(myEV3.getPort("C"));
+		rightMotor = new EV3LargeRegulatedMotor(myEV3.getPort("D"));
 
 		// Instantiate Sensors
-		rightBump = new EV3TouchSensor(myEV3.getPort("S1"));
-		leftBump = new EV3TouchSensor(myEV3.getPort("S2"));
+		rightBump = new EV3TouchSensor(myEV3.getPort("S4"));
+		leftBump = new EV3TouchSensor(myEV3.getPort("S1"));
 		uSensor = new EV3UltrasonicSensor(myEV3.getPort("S3"));
-		cSensor = new EV3ColorSensor(myEV3.getPort("S4"));
+		cSensor = new EV3ColorSensor(myEV3.getPort("S2"));
 
 		leftSP = leftBump.getTouchMode();
 		rightSP = rightBump.getTouchMode();
@@ -69,21 +70,21 @@ public class Robot {
 		// the offset number is the distance between the center
 		// of wheel to the center of robot, i.e. half of track width
 		// NOTE: this may require some trial and error to get right!!!
-		Wheel leftWheel = WheeledChassis.modelWheel(leftMotor, 3.3).offset(-8.8);
-		Wheel rightWheel = WheeledChassis.modelWheel(rightMotor, 3.3).offset(8.8);
+		Wheel leftWheel = WheeledChassis.modelWheel(leftMotor, 3.3).offset(-4.2);
+		Wheel rightWheel = WheeledChassis.modelWheel(rightMotor, 3.3).offset(4.2);
 		Chassis myChassis = new WheeledChassis(new Wheel[] { leftWheel, rightWheel }, WheeledChassis.TYPE_DIFFERENTIAL);
 
 		// Create new move pilot
 		pilot = new MovePilot(myChassis);
-		sensorMotor = new EV3MediumRegulatedMotor(myEV3.getPort("A"));
+		sensorMotor = new EV3MediumRegulatedMotor(myEV3.getPort("C"));
 
 		// Create new opp
 		opp = new OdometryPoseProvider(pilot);
 
 		// set the speed of the pilot
-		pilot.setAngularSpeed(35);
-		pilot.setLinearSpeed(40);
-		sensorMotor.setSpeed(40);
+		pilot.setAngularSpeed(40);
+		pilot.setLinearSpeed(5);
+		sensorMotor.setSpeed(80);
 	}
 
 	// Close all sensors
@@ -170,8 +171,10 @@ public class Robot {
 	
 	//move behavior
 	public void goAhead() {
-		while(getColour()[1]!=2.0f) {
-			getPilot().forward();
+		getPilot().forward();
+		while(getColour()[0]<0.1 && getColour()[1]<0.1
+				&& getColour()[2]<0.1) {
+			getPilot().stop();
 		}
 		getPilot().travel(travel_offset);
 	}
@@ -188,43 +191,44 @@ public class Robot {
 		goAhead();
 	}
 	public void goNotTurnBack() {
-		while(getColour()[1]!=2.0f) {
-			getPilot().backward();
+		getPilot().backward();
+		while(getColour()[0]<0.1 && getColour()[1]<0.1
+				&& getColour()[2]<0.1) {
+			getPilot().stop();
 		}
-		getPilot().travel(travel_offset);
+		getPilot().travel(travel_offset-2);
 	}
 	
 	//detect adjacency obs
-	public boolean[] detectObstacles(boolean first) {
-		boolean [] obstacles = new boolean[4];
-		int d = obs_distance_offset;
-		if(getDistance()>d) {
+	public void detectObstacles(boolean first) {
+		double d = obs_distance_offset;
+		if(getDistance()<d) {
 			obstacles[0] =true;
 		} else {
 			obstacles[0] =false;
 		}
-		rotateSensor(-90);
-		if(getDistance()>d) {
+		rotateSensor(90);
+		if(getDistance()<d) {
 			obstacles[1] =true;
 		} else {
 			obstacles[1] =false;
 		}
-		rotateSensor(180);
-		if(getDistance()>d) {
+		rotateSensor(-180);
+		if(getDistance()<d) {
 			obstacles[2] =true;
 		} else {
 			obstacles[2] =false;
 		}
+		rotateSensor(90);
 		if(first) {
 			getPilot().rotate(180);
-			if(getDistance()>d) {
+			if(getDistance()<d) {
 				obstacles[3] =true;
 			} else {
 				obstacles[3] =false;
 			}
 			getPilot().rotate(180);
 		}
-		return obstacles;
 	}
 
 	// one grid move to another adjacency grid

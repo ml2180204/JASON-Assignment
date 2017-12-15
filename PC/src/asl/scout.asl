@@ -10,13 +10,14 @@
 	<-	.send(doctor,tell,active);
 		.print("Detect adjacency grids...");
 		detect(obstacles);
-		?obs(X);
-		.send(doctor,tell,X);
+//		?obs(X);
+//		.send(doctor,tell,X);
 		.print("Move to next possible location...");
 		next(slot);
 		.drop_desire(next(slot)[source(A)]);
 		.send(doctor,untell,active).
 		
+
 +!goto(X,Y)[source(A)]
 	<-  .send(doctor,tell,active);	
 		.print("Update robot position and heading")

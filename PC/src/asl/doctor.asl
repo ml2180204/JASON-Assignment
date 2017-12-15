@@ -2,24 +2,28 @@
 
 /* Initial beliefs and rules */
 
-mapObs(1,0).
-mapObs(2,3).
-mapObs(0,0).
-psVictim(4,3).
+mapObs(2,1).
+mapObs(4,1).
+mapObs(1,2).
+mapObs(0,5).
+mapObs(4,4).
+mapObs(5,4).
+psVictim(0,0).
+psVictim(2,2).
 psVictim(4,0).
-psVictim(0,4).
-psVictim(2,0).
-psVictim(4,4).
+psVictim(3,3).
+psVictim(2,4).
 needUpdateObs:- mapObs(_,_).
 needUpdateVic:- psVictim(_,_).
 /* Initial goals */
 
-!updateObs(map).
-!updateVic(map).
+!start.
 
 /* Plans */
 
-+!start : true <- .print("hello world.").
++!start : not need_wait
+ <- !updateObs(map);
+ 	!updateVic(map).
 
 +!updateObs(map): needUpdateObs
 	<- ?mapObs(X,Y);
@@ -55,10 +59,6 @@ needUpdateVic:- psVictim(_,_).
 		}
 		.wait(300);
 		!!localization(slots).
-		
-+obs(X)[source(A)]
-	<- .print(A, " tells me the ", X , "direction is an obstacle");
-		-obs(X)[source(A)].
 	
 +!localization(slots): found_location(scout)
 	<-  .wait(300);
@@ -71,8 +71,6 @@ needUpdateVic:- psVictim(_,_).
 +!find(victim)
 	<- !!astar(victim).
 
-+!astar(victim): atVictim
-    <- !!check(slot).
 +!astar(victim): not atVictim
 	<-  ?nextSquare(X,Y);
 		if(not active[source(A)]){
@@ -81,7 +79,9 @@ needUpdateVic:- psVictim(_,_).
 		}
 	   .wait(300);
 	   !!astar(victim).
-	   
++!astar(victim): atVictim
+    <- !!check(slot).
+    
 +!check(slot)
 	<- if(not active[source(A)]){
 		.print("at victim area, ask scout to check the priority");
@@ -89,7 +89,7 @@ needUpdateVic:- psVictim(_,_).
 		}
 	.wait(300);
 	!!find(victim).
-	
-+color(X)[source(A)]
-	<- .print(A, " tells me the priority is ", X);
-		-color(X)[source(A)].
+//	
+//+color(X)[source(A)]
+//	<- .print(A, " tells me the priority is ", X);
+//		-color(X)[source(A)].

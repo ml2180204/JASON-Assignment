@@ -6,6 +6,7 @@ import jason.environment.grid.Location;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -33,8 +34,6 @@ public class RREnv extends Environment {
     public static final Term    cs = Literal.parseLiteral("check(slot)");
     public static final Term    rp = Literal.parseLiteral("remove(ps_victim)");
 
-
-
     static Logger logger = Logger.getLogger(RREnv.class.getName());
 
     private RRModel model;
@@ -42,42 +41,44 @@ public class RREnv extends Environment {
     private RRComm comm;
     @Override
     public void init(String[] args) {
-    	model = new RRModel(ARENA_LENGTH, ARENA_WIDTH, GRID_LENGTH, GRID_WIDTH, comm);
+    	model = new RRModel(ARENA_LENGTH, ARENA_WIDTH, GRID_LENGTH, GRID_WIDTH);
        // model = new MarsModel();
         view  = new RRView(model);
         model.setView(view);
         try {
-			comm = new RRComm(model,this);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+ 			comm = new RRComm(model,this);
+ 		} catch (Exception e) {
+ 			e.printStackTrace();
+ 		}
     }
     
     @Override
     public boolean executeAction(String ag, Structure action) {
         logger.info(ag+" doing: "+ action);
+        Literal n = Literal.parseLiteral("need_wait");
         try {
         	if (action.getFunctor().equals("initObs")) {
+        		addPercept(n);
         		int x = (int)((NumberTerm)action.getTerm(0)).solve();
                 int y = (int)((NumberTerm)action.getTerm(1)).solve();
                 model.initObs(x, y);
         	} else if (action.getFunctor().equals("initVictim")) {
+        		addPercept(n);
         		int x = (int)((NumberTerm)action.getTerm(0)).solve();
                 int y = (int)((NumberTerm)action.getTerm(1)).solve();
                 model.initVictim(x, y);
         	} else if (action.equals(ns)) {
-            	model.nextSlot();
-//              model.nextSlot();
-            	model.sendRobotBehavior();
+        		model.nextSlot();
+            	sendRobotBehavior();
             	String ret = comm.readFromRobot();
-            	if(ret.equals("UPDATE_POSSIBLE_LOCATION")) {
-            		model.detected_obstacles = false;
+            	if(ret.equals("DONE")) {
             	}
             } else if (action.equals(dto)){
+            	addPercept(n);
             	comm.sendToRobot("DETECT_OBSTACLES");
             	String ret = comm.readFromRobot();
             	if(ret.startsWith("DETECTED_OBSTACLES")) {
-            		String[] s = ret.substring(19).split("+");
+            		String[] s = ret.substring(19).split(",");
             		for(int i=0; i<s.length; i++) {
             			if(s[i].equals("T")) {
             				model.obstacles[i] = true;
@@ -88,12 +89,14 @@ public class RREnv extends Environment {
             		model.detected_obstacles = true;
             	}
             } else if (action.equals(ur)){
+            	addPercept(n);
             	String dx = String.valueOf(model.getAgPos(0).x);
             	String dy = String.valueOf(model.getAgPos(0).y);
             	String dh = String.valueOf(model.scoutHead);
                 comm.sendToRobot("UPDATE_ROBOT"+dx+","+dy+","+dh);
                 String ret = comm.readFromRobot();
             } else if (action.getFunctor().equals("goto")) {
+            	addPercept(n);
             	int x = (int)((NumberTerm)action.getTerm(0)).solve();
                 int y = (int)((NumberTerm)action.getTerm(1)).solve();
                 String dx = String.valueOf(x);
@@ -105,16 +108,18 @@ public class RREnv extends Environment {
             		model.moveTo(x, y);
             	}
             } else if (action.equals(cs)) {
+            	addPercept(n);
 //            	model.checkVictim();
             	comm.sendToRobot("CHECK_VICTIM");
             	String ret = comm.readFromRobot();
             	if(ret.startsWith("DETECTED_COLOR")) {
-            		String[] s = ret.split("+");
+            		String[] s = ret.split(",");
             		String color = s[1];
             		model.victimColor = color;
             		model.checkVictim();
             	}
             } else if (action.equals(rp)) {
+            	addPercept(n);
             	model.ps_victim.clear();
             }
 //            } else if (action.getFunctor().equals("move_towards")) {
@@ -142,6 +147,18 @@ public class RREnv extends Environment {
         informAgsEnvironmentChanged();
         return true;
     }
+    
+    void sendRobotBehavior() throws IOException {
+		if(!model.obstacles[0]) {
+			comm.sendToRobot("GO_AHEAD");
+		} else if(!model.obstacles[1]) {
+			comm.sendToRobot("GO_LEFT");
+		} else if(!model.obstacles[2]) {
+			comm.sendToRobot("GO_RIGHT");
+		} else if(!model.obstacles[3]) {
+			comm.sendToRobot("GO_BACK");
+		}
+	}
     
     /** creates the agents perception based on the MarsModel */
     void updatePercepts() {

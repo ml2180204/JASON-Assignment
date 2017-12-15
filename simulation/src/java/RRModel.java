@@ -32,7 +32,7 @@ public class RRModel extends GridWorldModel{
 
 	//simulate the current robot
 	private int curr_head = 0;
-    private Location curr_location = new Location (4,3);
+    private Location curr_location = new Location (4,5);
     private Location smltRed = new Location(4,3);
     private Location smltBlue = new Location(4,0);
     private Location smltGreen = new Location(0,4);
@@ -99,21 +99,25 @@ public class RRModel extends GridWorldModel{
 		add(RREnv.GARB, 1,0);
 		add(RREnv.GARB, 2,3);
 		add(RREnv.GARB, 0,0);
+		add(RREnv.GARB, 4,4);
+		add(RREnv.GARB, 3,4);
 		add(RREnv.POSSIBLE_VIC, 4,3);
 		add(RREnv.POSSIBLE_VIC, 4,0);
 		add(RREnv.POSSIBLE_VIC, 0,4);
 		add(RREnv.POSSIBLE_VIC, 2,0);
-		add(RREnv.POSSIBLE_VIC, 4,4);
+		
 		
 		grid[1][0].setOccupied(true);
 		grid[2][3].setOccupied(true);
 		grid[0][0].setOccupied(true);
+		grid[4][4].setOccupied(true);
+		grid[3][4].setOccupied(true);
 		ps_victim.add(grid[4][3]);
 		ps_victim.add(grid[4][0]);
 		ps_victim.add(grid[0][4]);
 		
 		ps_victim.add(grid[2][0]);
-		ps_victim.add(grid[4][4]);
+		
 		//update
 		updateAdjacencyList();
 	}
@@ -211,6 +215,20 @@ public class RRModel extends GridWorldModel{
 	void updatePsLocation(){
 		boolean flag1;
 		boolean flag2;
+		if(!next_ps_square.isEmpty()) {
+			for(int i=0; i<ps_square.size();i++) {
+				ps_square.get(i).getHeadList().clear();
+				remove(RREnv.POSSIBLE_LOCATION, ps_square.get(i).getXCoordinate(),ps_square.get(i).getYCoordinate());
+			}
+			ps_square.clear();
+			ps_square.addAll(next_ps_square);
+			
+			for(int i=0; i<ps_square.size();i++) {
+				ps_square.get(i).getHeadList().addAll(ps_square.get(i).getNextHeadList());
+				ps_square.get(i).getNextHeadList().clear();
+			}
+			next_ps_square.clear();
+		}
 		if(ps_square.isEmpty()) {
 			for (int y = 0; y < ROWS; y++) {
 				for (int x = 0; x < COLUMNS; x++) {
@@ -344,6 +362,11 @@ public class RRModel extends GridWorldModel{
 		}
 	}
 	void nextSlot() {
+		System.out.println(upObs(curr_location.x, curr_location.y, curr_head));
+		System.out.println(leftObs(curr_location.x, curr_location.y, curr_head));
+		System.out.println(rightObs(curr_location.x, curr_location.y, curr_head));
+		System.out.println(downObs(curr_location.x, curr_location.y, curr_head));
+		
 		updatePsLocation();
 		if(!(ps_square.size()==1 && ps_square.get(0).getHeadList().size()==1)) {
 		try {
@@ -392,17 +415,7 @@ public class RRModel extends GridWorldModel{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		for(int i=0; i<ps_square.size();i++) {
-			ps_square.get(i).getHeadList().clear();
-			remove(RREnv.POSSIBLE_LOCATION, ps_square.get(i).getXCoordinate(),ps_square.get(i).getYCoordinate());
-		}
-		ps_square.clear();
-		ps_square.addAll(next_ps_square);
-		for(int i=0; i<ps_square.size();i++) {
-			ps_square.get(i).getHeadList().addAll(ps_square.get(i).getNextHeadList());
-			ps_square.get(i).getNextHeadList().clear();
-		}
-		next_ps_square.clear();
+		
 		} else {
 			remove(RREnv.POSSIBLE_LOCATION, ps_square.get(0).getXCoordinate(),ps_square.get(0).getYCoordinate());
 			setAgPos(0, ps_square.get(0).getXCoordinate(), ps_square.get(0).getYCoordinate() );
