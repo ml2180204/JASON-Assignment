@@ -36,11 +36,15 @@ public class SimuServer {
 		}
 	}
 
-	private void load() {
-		while(!serverClosed) {
+	private void load() throws InterruptedException {
+		while(!serverClosed&&!socket.isClosed()) {
 			try {
 				String msg = in.readLine();
+				if(socket.isClosed()) {
+					serverSocket.close();
+				}
 				if(msg.startsWith("MOVE")) {
+					Thread.sleep(500);
 					String[] pos = msg.substring(4).split(",");
 					System.out.println("MOVE_TO("+pos[0]+","+pos[1]+")");
 					int x = Integer.parseInt(pos[0]);
@@ -48,8 +52,11 @@ public class SimuServer {
 					out.println("UPDATE_MOVE");
 					out.flush();
 				} else if(msg.startsWith("UPDATE_ROBOT")) {
+					Thread.sleep(500);
 					String[] info = msg.substring(12).split(",");
-					System.out.println("UPDATE_LOCATION_INFO");
+					System.out.println("UPDATE_LOCATION");
+					System.out.println("position:("+info[0]+","+info[1]+")");
+					System.out.println("heading: "+info[2]);
 					int x = Integer.parseInt(info[0]);
 					int y = Integer.parseInt(info[1]);
 					int head = Integer.parseInt(info[2]);
@@ -59,6 +66,7 @@ public class SimuServer {
 				switch(msg) {
 				case "DETECT_OBSTACLES":
 					System.out.println("DETECT_OBSTACLES");
+					
 					String front ="F", left="F", right="F", back = "F";
 					if(step==1) {
 						front = "F"; left="F"; right="T"; back = "F";
@@ -100,19 +108,19 @@ public class SimuServer {
 				case "CHECK_VICTIM":
 					String color = "empty";
 					if(color_step==1) {
-						color = "red";
+						color = "empty";
 					}
 					if(color_step==2) {
-						color = "empty";
+						color = "red";
 					}
 					if(color_step==3) {
-						color = "green";
+						color = "blue";
 					}
 					if(color_step==4) {
-						color = "empty";
+						color = "green";
 					}
 					if(color_step==5) {
-						color = "blue";
+						color = "empty";
 					}
 					color_step++;
 					System.out.println("DETECTED_COLOR: "+color);

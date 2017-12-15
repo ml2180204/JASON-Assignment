@@ -17,6 +17,8 @@ public class RobotService {
     private Socket socket;
     private ServerSocket serverSocket;
     
+    private int color_step=1;
+    
 	public RobotService(Robot robot) throws Exception {  
 		this.robot = robot;
         serverSocket = new ServerSocket(port);
@@ -52,7 +54,8 @@ public class RobotService {
 					out.flush();
 				} else if(msg.startsWith("UPDATE_ROBOT")) {
 					String[] info = msg.substring(12).split(",");
-					System.out.println("UPDATE_LOCATION_INFO");
+					System.out.println("UPDATE_LOCATION");
+					
 					int x = Integer.parseInt(info[0]);
 					int y = Integer.parseInt(info[1]);
 					int head = Integer.parseInt(info[2]);
@@ -86,7 +89,7 @@ public class RobotService {
 					out.flush();
 					break;
 				case "GO_AHEAD":
-					System.out.println("msg");
+					System.out.println(msg);
 					robot.goAhead();
 					out.println("DONE");
 					out.flush();
@@ -111,13 +114,15 @@ public class RobotService {
 					break;
 				case "CHECK_VICTIM":
 					String color = "empty";
-					if(robot.getColour()[0]>0.17f) {
+					if(robot.isRed()) {
 						color = "red";
-					} else if (robot.getColour()[2] < 0.13f) {
+					} else if (robot.isBlue()) {
 						color = "blue";
-					} else if (robot.getColour()[1] > 0.15f) {
+					} else if (robot.isGreen()) {
 						color = "green";
 					}
+		
+					color_step++;
 					System.out.println("DETECTED_COLOR: "+color);
 					out.println("DETECTED_COLOR"+","+color);
 					out.flush();	

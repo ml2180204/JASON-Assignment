@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.net.Socket;
 
 public class RRComm{
-	private static final String server_ip = "127.0.0.1";
+	private static final String server_ip = "172.20.1.139";
     // port is 8888
     private static final int port = 8888; 
     private Socket socket;
@@ -31,4 +31,15 @@ public class RRComm{
     	}
     	return ret;
     }
+    
+	public synchronized void close() {
+		if (socket.isClosed()) {
+			return;
+		}
+		try {
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

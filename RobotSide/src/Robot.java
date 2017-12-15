@@ -36,7 +36,7 @@ public class Robot {
 	public int robot_x = 0;
 	public int robot_y = 0;
 	public boolean [] obstacles = new boolean[4];
-	private int travel_offset = 14;
+	private int travel_offset = 10;
 	private double obs_distance_offset = 0.22;
 	
 	public Robot() {
@@ -70,8 +70,8 @@ public class Robot {
 		// the offset number is the distance between the center
 		// of wheel to the center of robot, i.e. half of track width
 		// NOTE: this may require some trial and error to get right!!!
-		Wheel leftWheel = WheeledChassis.modelWheel(leftMotor, 3.3).offset(-4.2);
-		Wheel rightWheel = WheeledChassis.modelWheel(rightMotor, 3.3).offset(4.2);
+		Wheel leftWheel = WheeledChassis.modelWheel(leftMotor, 3.3).offset(-4.11);
+		Wheel rightWheel = WheeledChassis.modelWheel(rightMotor, 3.3).offset(4.11);
 		Chassis myChassis = new WheeledChassis(new Wheel[] { leftWheel, rightWheel }, WheeledChassis.TYPE_DIFFERENTIAL);
 
 		// Create new move pilot
@@ -143,7 +143,7 @@ public class Robot {
 	}
 
 	// Returns color sensor data
-
+	
 	public float[] getColour() {
 		colourSP.fetchSample(colourSample, 0);
 		return colourSample; // return array of 3 colours
@@ -169,13 +169,28 @@ public class Robot {
 		direction_flag += i;
 	}
 	
+	public boolean isBlue() {
+		return (getColour()[0]<0.1 && getColour()[1]<0.16 && getColour()[2]>0.14);
+	}
+	
+	public boolean isRed() {
+		return (getColour()[0]>0.15 && getColour()[1]<0.04 && getColour()[2]<0.03);
+	}
+	
+	public boolean isGreen() {
+		return (getColour()[0]<0.1 && getColour()[1]>0.16 && getColour()[2]<0.06);
+	}
+	
+	public boolean isBlack() {
+		return (getColour()[0]<0.1 && getColour()[1] <0.1 && getColour()[2]<0.1);
+	}
+	
 	//move behavior
 	public void goAhead() {
-		getPilot().forward();
-		while(getColour()[0]<0.1 && getColour()[1]<0.1
-				&& getColour()[2]<0.1) {
-			getPilot().stop();
+		getPilot().travel(100000, true);
+		while(!isBlack()) {
 		}
+		getPilot().stop();
 		getPilot().travel(travel_offset);
 	}
 	public void goLeft() {
@@ -191,12 +206,11 @@ public class Robot {
 		goAhead();
 	}
 	public void goNotTurnBack() {
-		getPilot().backward();
-		while(getColour()[0]<0.1 && getColour()[1]<0.1
-				&& getColour()[2]<0.1) {
-			getPilot().stop();
+		getPilot().travel(-100000, true);
+		while(!isBlack()) {
 		}
-		getPilot().travel(travel_offset-2);
+		getPilot().stop();
+		getPilot().travel(-travel_offset);
 	}
 	
 	//detect adjacency obs
@@ -233,7 +247,7 @@ public class Robot {
 
 	// one grid move to another adjacency grid
 	public void Move(int x, int y, int dx, int dy) {
-		if (x < dx) {
+		if (x > dx) {
 			if (faceLeft()) {
 				goAhead();
 			}
@@ -244,15 +258,13 @@ public class Robot {
 			}
 			if (faceFront()) {
 				getPilot().rotate(-90);
-				direction_flag--;
 				goAhead();
 			}
 			if (faceBack()) {
 				getPilot().rotate(90);
-				direction_flag++;
 				goAhead();
 			}
-		} else if (x > dx) {
+		} else if (x <dx) {
 			if (faceRight()) {
 				goAhead();
 			}
@@ -261,38 +273,33 @@ public class Robot {
 			}
 			if (faceFront()) {
 				getPilot().rotate(90);
-				direction_flag++;
 				goAhead();
 			}
 			if (faceBack()) {
 				getPilot().rotate(-90);
-				direction_flag--;
 				goAhead();
-			}
-		} else if (y < dy) {
-			if (faceFront()) {
-				goAhead();
-			}
-			if (faceRight()) {
-				getPilot().rotate(-90);
-				direction_flag--;
-				goAhead();
-			}
-			if (faceLeft()) {
-				getPilot().rotate(90);
-				direction_flag++;
-				goAhead();
-			}
-			if (faceBack()) {
-				goNotTurnBack();
 			}
 		} else if (y > dy) {
+			if (faceFront()) {
+				goAhead();
+			}
+			if (faceRight()) {
+				getPilot().rotate(-90);
+				goAhead();
+			}
+			if (faceLeft()) {
+				getPilot().rotate(90);
+				goAhead();
+			}
+			if (faceBack()) {
+				goNotTurnBack();
+			}
+		} else if (y < dy) {
 			if (faceBack()) {
 				goAhead();
 			}
 			if (faceRight()) {
 				getPilot().rotate(90);
-				direction_flag++;
 				goAhead();
 			}
 			if (faceFront()) {
@@ -300,7 +307,6 @@ public class Robot {
 			}
 			if (faceLeft()) {
 				getPilot().rotate(-90);
-				direction_flag--;
 				goAhead();
 			}
 

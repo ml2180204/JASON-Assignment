@@ -1,0 +1,11 @@
+
+MAS qunidaye {
+
+    infrastructure: Centralised
+
+    environment: RREnv
+    
+    agents:
+		doctor; scout;
+    aslSourcePath: "src/asl";
+}
