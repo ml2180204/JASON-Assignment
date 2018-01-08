@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.net.Socket;
 
 public class RRComm{
-	private static final String server_ip = "172.20.1.139";
+	private static final String server_ip = "localhost";
     // port is 8888
     private static final int port = 8888; 
     private Socket socket;
@@ -13,7 +13,7 @@ public class RRComm{
     private BufferedReader in;
     private PrintStream out;
     
-    public RRComm(RRModel model, RREnv env) throws Exception {  
+    public RRComm() throws Exception {  
     	socket = new Socket(server_ip, port); 
         System.out.print("connect");
     }
@@ -27,8 +27,6 @@ public class RRComm{
     public String readFromRobot() throws IOException {
     	in = new BufferedReader(new InputStreamReader(socket.getInputStream())); 
     	String ret = in.readLine();
-    	while (ret==null) {
-    	}
     	return ret;
     }
     

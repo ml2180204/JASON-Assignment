@@ -25,35 +25,39 @@ needUpdateVic:- psVictim(_,_).
 	<- ?mapObs(X,Y);
 	   initObs(X,Y);
 	   -mapObs(X,Y);
-	   !!init(map).
+	   !init(map).
 	   
 +!init(map): needUpdateVic
 	<- ?psVictim(X,Y);
 	   initVictim(X,Y);
 	   -psVictim(X,Y);
-	   !!init(map).
+	   !init(map).
 			      
 +!init(map)
 	<-  .print("map update finished")
-		!!check(location).
+		!check(location).
 		
 		
 +!check(location): not found_location(scout)
 	<- .send(scout, achieve, detect(obstacles)).
 	
 +!check(location)
-	<- !!find(victim).
+	<- !find(victim).
 
 +!localization(slot)
 	<-  trim(slot);
 		.send(scout, achieve, move(slot)).
 	
++!color(X)[source(A)]
+	<-  .print("receive the color is ",X, " from ", A);
+		!find(victim).
+		
 +!find(victim) : found_all_victim
 	<- finish(work);
 		.print("found all victims").
 		
 +!find(victim)
-	<- !!update(robot).
+	<- !update(robot).
 
 +!update(robot)
 	<-	.send(scout,achieve,update(robot)).
@@ -65,12 +69,8 @@ needUpdateVic:- psVictim(_,_).
 		.send(scout,achieve,goto(X,Y)).
 	   
 +!astar(victim): atVictim
-    <- !!check(slot).
+    <- !check(slot).
     
 +!check(slot)
 	<- .print("at victim area, ask scout to check the priority");
 	.send(scout,achieve,check(slot)).
-//	
-//+color(X)[source(A)]
-//	<- .print(A, " tells me the priority is ", X);
-//		-color(X)[source(A)].

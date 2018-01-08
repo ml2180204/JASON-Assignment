@@ -1,13 +1,14 @@
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
 import jason.environment.grid.GridWorldModel;
 import jason.environment.grid.Location;
 
-//Map.java
+//RRModel.java
 //This class contains all known information about the map space the robot is operating in
 //It is based on an occupancy grid
+//Author: Yaotian Li, Alexander Williams(last assignment group)
+
 public class RRModel extends GridWorldModel{
 	
 	private final int LENGTH; // Arena length
@@ -27,24 +28,17 @@ public class RRModel extends GridWorldModel{
 	private GridSquare[][] grid; // Array of coordinates and the occupancy
 
 	private GridSquare originSquare = null; // Grid square where robot had begun
-	private GridSquare endSquare = null; // Grid Square where robot should finish
 	private GridSquare robotSquare = null; // Grid Square robot currently occupies
-	private boolean findEnd = false;
-
-	//simulate the current robot
-//	private int curr_head = 0;
-//    private Location curr_location = new Location (4,3);
-//    public Location smltRed = new Location(4,3);
-//    public Location smltBlue = new Location(4,0);
-//    public Location smltGreen = new Location(0,4);
-    
+	
+	// the possible square the robot may be in
     public static final ArrayList<GridSquare> ps_square = new ArrayList<GridSquare>(); //store the possible square
     ArrayList<GridSquare> next_ps_square = new ArrayList<GridSquare>(); //store the next_possible square
   
+    
+    
     //the agents belief
     public Integer scoutHead;
     public Location nextVictim = new Location (0,0);
-    public boolean detected_obstacles = false;
 //    public boolean detected_color = false;
     public boolean[] obstacles = new boolean[4]; 
     public String victimColor = "empty";
@@ -56,15 +50,15 @@ public class RRModel extends GridWorldModel{
     
 	// Constructor method
 	public RRModel(int l, int w, int gl, int gw) {
-		super(Math.round(w/gw),Math.round(l/gl),1);
+		super(Math.round(w/gw)+2,Math.round(l/gl)+2,1);
 		
 		// Set grid dimensiosn
 		LENGTH = l;
 		WIDTH = w;
 		GRID_LENGTH = gl;
 		GRID_WIDTH = gw;
-		COLUMNS = Math.round(WIDTH / GRID_WIDTH);
-		ROWS = Math.round(LENGTH / GRID_LENGTH);
+		COLUMNS = Math.round(WIDTH / GRID_WIDTH)+2;
+		ROWS = Math.round(LENGTH / GRID_LENGTH)+2;
 		
 		// Initialise number of squares in map
 		// One row of squares on each axis *may* be a slightly different size
@@ -100,31 +94,38 @@ public class RRModel extends GridWorldModel{
 			lengthRemaining = lengthRemaining - GRID_LENGTH;
 		}
 		
-		//initialize the obstacles on the map
-//		grid[2][1].setOccupied(true);
-//		grid[4][1].setOccupied(true);
-//		grid[1][2].setOccupied(true);
-//		grid[0][5].setOccupied(true);
-//		grid[4][4].setOccupied(true);
-//		grid[5][4].setOccupied(true);
-//		ps_victim.add(grid[0][0]);
-//		ps_victim.add(grid[2][2]);
-//		ps_victim.add(grid[4][0]);
-//		ps_victim.add(grid[3][3]);
-//		ps_victim.add(grid[2][4]);
-		//update
+		//draw the bound of the arena
+		for(int i=0;i<Math.round(w/gw)+2;i++) {
+			add(RREnv.GARB, i,0);
+			grid[i][0].setOccupied(true);
+		}
+		for(int i=0;i<Math.round(w/gw)+2;i++) {
+			add(RREnv.GARB, i,Math.round(l/gl)+1);
+			grid[i][Math.round(l/gl)+1].setOccupied(true);
+		}
+		for(int i=1;i<Math.round(l/gl)+1;i++) {
+			add(RREnv.GARB, 0,i);
+			grid[0][i].setOccupied(true);
+		}
+		for(int i=1;i<Math.round(l/gl)+1;i++) {
+			add(RREnv.GARB, Math.round(w/gw)+1,i);
+			grid[Math.round(w/gw)+1][i].setOccupied(true);
+		}
 	}
 
+	//method to initialize obstacles 
 	void initObs(int x,int y) {
-		add(RREnv.GARB, x, y);
-		grid[x][y].setOccupied(true);
+		add(RREnv.GARB, x+1, y+1);
+		grid[x+1][y+1].setOccupied(true);
 		updateAdjacencyList();
 	}
 	
+	//method to initialize possible victims
 	void initVictim(int x, int y) {
-		add(RREnv.POSSIBLE_VIC, x, y);
-		ps_victim.add(grid[x][y]);
+		add(RREnv.POSSIBLE_VIC, x+1, y+1);
+		ps_victim.add(grid[x+1][y+1]);
 	}
+	
 	// the N,S,W,E direction of one grid contains obstacles
 	boolean NorthObs(int x, int y) {
 		if(y!=0 && grid[x][y].getAdjacencyList().contains(grid[x][y-1])) {
@@ -214,7 +215,8 @@ public class RRModel extends GridWorldModel{
 			return false;
 		}
 	}
-	//action
+	//method to update the current possible square, if the list is empty, add new square
+	//based on the information from the robot. if is not empty, cut the impossible square.
 	void updatePsLocation(){
 		boolean flag1;
 		boolean flag2;
@@ -325,6 +327,9 @@ public class RRModel extends GridWorldModel{
 		}
 		drawPsLocation();
 	}
+	
+	//update the next possible square based on the information of the current possible 
+	//location
 	void updateNextPsLocation() {
 		for(int i=0; i<ps_square.size();i++) {
 			for(int j=0, s=ps_square.get(i).getHeadList().size(); j<s;j++) {
@@ -356,12 +361,9 @@ public class RRModel extends GridWorldModel{
 		}
 
 	}
+	
+	//trim the possible location and update them on the UI
 	void nextSlot() {
-		System.out.println(obstacles[0]);
-		System.out.println(obstacles[1]);
-		System.out.println(obstacles[2]);
-		System.out.println(obstacles[3]);
-		
 		updatePsLocation();
 		if(!(ps_square.size()==1 && ps_square.get(0).getHeadList().size()==1)) {
 		try {
@@ -419,6 +421,7 @@ public class RRModel extends GridWorldModel{
 		
 	}
 	
+	//draw possible location
     void drawPsLocation() {
 		for(int i=0; i<ps_square.size();i++) {
 			add(RREnv.POSSIBLE_LOCATION, ps_square.get(i).getXCoordinate(),ps_square.get(i).getYCoordinate());
@@ -428,21 +431,46 @@ public class RRModel extends GridWorldModel{
 		}
 	}
 	
+    //update the coordinate of the nearest victim (using A star search)
     void findNearestVictim() {
-    	GridSquare start = grid[getAgPos(0).x][getAgPos(0).y];
-    	int min_length = 1000;
-    	for(int i=0; i<ps_victim.size(); i++) {
-    		GridSquare end = ps_victim.get(i);
-    		int curr_length = findPath(start,end).size();
-    		if(curr_length<min_length) {	
+    	int start = 0;
+    	int end = ps_victim.size()-1;
+    	CalculateAllComb(start, end, 0);
+    }
+    
+    //find all combinations of the victim list and calculate
+    void CalculateAllComb(int start, int end, int time) {
+    	GridSquare origin = grid[getAgPos(0).x][getAgPos(0).y];
+    	int min_length = 10000;
+    	if(start==end) {
+    		int curr_length = 0;
+    		for(int i=0; i<ps_victim.size();i++) {
+    			curr_length += findPath(origin, ps_victim.get(i)).size();
+    		}
+    		if(curr_length<min_length) {
     			min_length = curr_length;
-    			nextVictim.x = end.getXCoordinate();
-    			nextVictim.y = end.getYCoordinate();
+    			nextVictim.x = ps_victim.get(0).getXCoordinate();
+    			nextVictim.y = ps_victim.get(0).getYCoordinate();
+    		}
+    		time++;
+    	} else {
+    		for(int i=start; i<=end; i++) {
+    			//swap
+    			GridSquare temp = ps_victim.get(start);
+    			ps_victim.set(start, ps_victim.get(i));
+    			ps_victim.set(i, temp);
+    			//sub
+    			CalculateAllComb(start+1, end, time);
+    			//swap back
+    			temp = ps_victim.get(i);
+    			ps_victim.set(i, ps_victim.get(start));
+    			ps_victim.set(start, temp);
     		}
     	}
     }
-    
-    
+
+    	
+    //the method to ask the agent to move to next adjacency grid and update the UI
     void moveTo(int x, int y) {
     	Location scout = getAgPos(0);
         if (scout.x < x) {
@@ -484,6 +512,7 @@ public class RRModel extends GridWorldModel{
         setAgPos(0, scout);
    }
     
+    //get the next square the agent should be in
     GridSquare getNextSquare() {
     	findNearestVictim();
     	GridSquare nextSquare = findPath(grid[getAgPos(0).x][getAgPos(0).y],
@@ -491,36 +520,24 @@ public class RRModel extends GridWorldModel{
     	return nextSquare;
     }
     
-    void goToVcitim() {
-    	findNearestVictim();
-    	GridSquare nextSquare = findPath(grid[getAgPos(0).x][getAgPos(0).y],grid[nextVictim.x][nextVictim.y]).get(0);
-    	moveTo(nextSquare.getXCoordinate(),nextSquare.getYCoordinate());	
-    }
+
     
-    
+    //check the possible victim square and update the information
     void checkVictim() {
     	int x = getAgPos(0).x;
     	int y = getAgPos(0).y;
     	if(victimColor.equals("red")) {
     		found_victim.add(grid[x][y]);
-    		ps_victim.remove(grid[x][y]);
-    		remove(RREnv.POSSIBLE_VIC, getAgPos(0));
     		add(RREnv.REDVIC, getAgPos(0));
     	} else if (victimColor.equals("blue")) {
     		found_victim.add(grid[x][y]);
-    		ps_victim.remove(grid[x][y]);
-    		remove(RREnv.POSSIBLE_VIC, getAgPos(0));
     		add(RREnv.BLUEVIC, getAgPos(0));
     	} else if (victimColor.equals("green")) {
     		found_victim.add(grid[x][y]);
-    		ps_victim.remove(grid[x][y]);
-    		remove(RREnv.POSSIBLE_VIC, getAgPos(0));
     		add(RREnv.GREENVIC, getAgPos(0));
-    	} else {
-    		ps_victim.remove(grid[x][y]);
-    		remove(RREnv.POSSIBLE_VIC, getAgPos(0));
-    	}
-    	
+    	} 
+    	ps_victim.remove(grid[x][y]);
+		remove(RREnv.POSSIBLE_VIC, getAgPos(0));
     }
     
 	void addAdjacencyList(int x, int y) {
@@ -782,12 +799,4 @@ public class RRModel extends GridWorldModel{
 		} while (currentNode.getBeenHere() == true && visited.size() < COLUMNS * ROWS);
 		return findPath(robotSquare, currentNode);
 	}
-
 }
-//class Simulation {
-//	private ArrayList<Boolean[]> sr = new ArrayList<Boolean[]>();
-//	public ArrayList<Boolean[]>  returnSimu() {
-//		Location smltRed = new Location(4,3);
-//		
-//	}
-//}

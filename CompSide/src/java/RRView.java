@@ -64,11 +64,9 @@ public class RRView extends GridWorldView {
 
         public void drawGarb(Graphics g, int x, int y) {
             super.drawObstacle(g, x, y);
-            g.setColor(Color.white);
-            drawString(g, x, y, defaultFont, "G");
         }
         
-
+        //draw the location of the agent including heading
         public void drawLocation(Graphics g, int x, int y, Color c) {
             g.setColor(c);
             for (int i=0; i<RRModel.ps_square.size(); i++) {
